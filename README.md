@@ -81,8 +81,7 @@ GUARDAI_PROJECT/
    ```
 
    ---
-
-### **Box 7: Future Roadmap**
+   
 ## 🔮 Future Roadmap
 - [ ] **WhatsApp Business API** integration for automated message intercept.
 - [ ] **OCR Module** to detect fraud patterns from screenshots and images.
