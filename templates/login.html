@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuardAI | Secure Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #f8fafc; /* Light Grayish Blue Background */
+            color: #1e293b;
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+
+        .login-card { 
+            background: #ffffff; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 16px; 
+            padding: 40px; 
+            width: 100%; 
+            max-width: 400px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); 
+            text-align: center;
+        }
+
+        h2 { 
+            color: #0f172a; 
+            margin-bottom: 10px; 
+            font-weight: 800; 
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            color: #64748b; 
+            font-size: 0.9rem; 
+            margin-bottom: 30px;
+        }
+
+        /* INPUT VISIBILITY FIX */
+        .form-control { 
+            background: #ffffff !important; 
+            color: #0f172a !important; /* Likha hua text black/dark nazar aaye */
+            border: 1px solid #cbd5e1 !important; 
+            margin-bottom: 20px; 
+            padding: 12px; 
+            border-radius: 8px; 
+            font-size: 1rem;
+        }
+
+        .form-control:focus { 
+            border-color: #3b82f6 !important; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1;
+        }
+
+        /* Browser Autofill Fix */
+        input:-webkit-autofill {
+            -webkit-text-fill-color: #0f172a !important;
+            -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+        }
+
+        .btn-login { 
+            background: #0f172a; 
+            color: #ffffff; 
+            font-weight: 700; 
+            width: 100%; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 8px; 
+            transition: 0.3s; 
+            letter-spacing: 1px; 
+        }
+
+        .btn-login:hover { 
+            background: #1e293b; 
+            transform: translateY(-1px); 
+        }
+
+        a { 
+            color: #3b82f6; 
+            text-decoration: none; 
+            font-size: 0.9rem; 
+            font-weight: 500;
+        }
+
+        a:hover { 
+            text-decoration: underline; 
+        }
+
+        .error-msg { 
+            background: rgba(239, 68, 68, 0.1); 
+            border: 1px solid #ef4444; 
+            color: #b91c1c; 
+            font-size: 0.85rem; 
+            border-radius: 8px; 
+            padding: 10px; 
+            margin-bottom: 20px; 
+        }
+
+        .footer-text {
+            color: #64748b;
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>🛡️ LOGIN</h2>
+        <p class="subtitle">Access GuardAI Security Engine</p>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for msg in messages %}
+              <div class="error-msg">{{ msg }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="/login" method="POST">
+            <input type="text" name="username" class="form-control" placeholder="Username" required autocomplete="off">
+            <input type="password" name="password" class="form-control" placeholder="Password" required>
+            <button type="submit" class="btn btn-login">AUTHORIZE ACCESS</button>
+        </form>
+
+        <p class="footer-text">New User? <a href="/signup">Create Account</a></p>
+        <p><a href="/">← Dashboard</a></p>
+    </div>
+</body>
+</html>
