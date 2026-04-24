@@ -7,13 +7,15 @@ import joblib
 import webbrowser
 from threading import Timer
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # --- 1. ABSOLUTE PATH ENGINE ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 template_dir = os.path.join(basedir, 'templates')
 
 app = Flask(__name__, template_folder=template_dir)
-app.config['SECRET_KEY'] = 'guardai_secure_key_786'
+app.config['SECRET_KEY'] = os.getenv('GUARDAI_SECRET_KEY', 'guardai-dev-change-me')
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 
 # --- 2. DATABASE CONFIGURATION ---
 db_path = os.path.join(basedir, 'users.db')
@@ -28,7 +30,7 @@ login_manager.login_view = 'login'
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     scans = db.relationship('ScanHistory', backref='owner', lazy=True)
 
 class ScanHistory(db.Model):
@@ -74,8 +76,14 @@ def home():
 def login():
     if current_user.is_authenticated: return redirect(url_for('home'))
     if request.method == 'POST':
-        user = User.query.filter_by(username=request.form.get('username')).first()
-        if user and user.password == request.form.get('password'):
+        username = (request.form.get('username') or '').strip()
+        password = request.form.get('password') or ''
+        user = User.query.filter_by(username=username).first()
+        if user and (check_password_hash(user.password, password) or user.password == password):
+            # Backward compatibility: transparently migrate legacy plaintext passwords.
+            if user.password == password:
+                user.password = generate_password_hash(password)
+                db.session.commit()
             login_user(user)
             return redirect(url_for('home'))
         flash('Invalid Username or Password!')
@@ -84,10 +92,22 @@ def login():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        if User.query.filter_by(username=request.form.get('username')).first():
+        username = (request.form.get('username') or '').strip()
+        password = request.form.get('password') or ''
+
+        if len(username) < 3:
+            flash('Username must be at least 3 characters long.')
+            return redirect(url_for('signup'))
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.')
+            return redirect(url_for('signup'))
+        if User.query.filter_by(username=username).first():
             flash('Username already taken!')
             return redirect(url_for('signup'))
-        new_user = User(username=request.form.get('username'), password=request.form.get('password'))
+        new_user = User(
+            username=username,
+            password=generate_password_hash(password),
+        )
         db.session.add(new_user)
         db.session.commit()
         flash('Account Created! Please Login.')
@@ -97,8 +117,11 @@ def signup():
 @app.route('/analyze', methods=['POST'])
 @login_required 
 def analyze():
-    message = request.form.get('message')
+    message = (request.form.get('message') or '').strip()
     if not message: return redirect(url_for('home'))
+    if len(message) > 2000:
+        flash('Message is too long. Please keep it under 2000 characters.')
+        return redirect(url_for('home'))
 
     # --- REAL-TIME CONTENT HEURISTICS ---
     # 1. Link Detection (Check for unsecured links)
@@ -159,5 +182,12 @@ def start_browser():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    Timer(1, start_browser).start()
-    app.run(port=5050, debug=False, use_reloader=False)
+    open_browser = os.getenv('GUARDAI_OPEN_BROWSER', 'false').lower() == 'true'
+    if open_browser:
+        Timer(1, start_browser).start()
+    app.run(
+        host='127.0.0.1',
+        port=int(os.getenv('PORT', '5050')),
+        debug=os.getenv('FLASK_DEBUG', 'false').lower() == 'true',
+        use_reloader=False
+    )
